@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StayZ - Login & Register</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --primary: #6a11cb;
+            --secondary: #fcb045;
+            --accent: #ff3cac;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        .navbar-brand {
+            font-weight: 800;
+            background: linear-gradient(to right, var(--accent), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: 1.8rem;
+        }
+        
+        .auth-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s;
+        }
+        
+        .auth-title {
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .form-control {
+            border-radius: 12px;
+            padding: 12px 15px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.8);
+        }
+        
+        .btn-auth {
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            border: none;
+            border-radius: 12px;
+            padding: 12px 30px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all 0.3s;
+        }
+        
+        .btn-auth:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(106, 17, 203, 0.2);
+        }
+        
+        .auth-toggle {
+            color: var(--primary);
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .auth-toggle:hover {
+            text-decoration: underline;
+        }
+        
+        .divider {
+            height: 3px;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            border-radius: 3px;
+            margin: 20px 0;
+            opacity: 0.7;
+        }
+        
+        .social-btn {
+            border-radius: 12px;
+            padding: 10px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .social-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-google {
+            background-color: #fff;
+            color: #757575;
+            border: 1px solid #ddd;
+        }
+        
+        .btn-facebook {
+            background-color: #3b5998;
+            color: white;
+        }
+
+        .alert {
+            border-radius: 12px;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .password-strength {
+            margin-top: 0.5rem;
+        }
+
+        .password-strength-bar {
+            height: 5px;
+            border-radius: 2.5px;
+            margin-top: 0.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .password-strength-text {
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        .strength-weak {
+            color: #dc3545;
+        }
+
+        .strength-medium {
+            color: #ffc107;
+        }
+
+        .strength-strong {
+            color: #28a745;
+        }
+
+        .form-control.error {
+            border-color: #dc3545;
+        }
+
+        @media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.5rem;
+            }
+            
+            .auth-title {
+                font-size: 1.5rem;
+            }
+            
+            .auth-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white py-3">
+        <div class="container">
+            <a class="navbar-brand" href="#">StayZ</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link fw-bold" href="#">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Rooms</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Reviews</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Offers</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <!-- Alert Box -->
+                <div id="auth-alert" class="alert alert-dismissible fade" role="alert">
+                    <span id="alert-message"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                
+                <!-- Login Form -->
+                <div id="login-form" class="auth-card p-4 mb-4">
+                    <h2 class="auth-title text-center mb-4">Welcome Back!</h2>
+                    
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label for="login-email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="login-email" placeholder="Enter your email" required>
+                            <div id="emailError" class="error-message"></div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="login-password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="login-password" placeholder="Enter your password" required>
+                                <button class="btn btn-outline-secondary" type="button" id="login-password-toggle">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div id="passwordError" class="error-message"></div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="remember-me">
+                            <label class="form-check-label" for="remember-me">Remember me</label>
+                            <a href="#" class="float-end text-decoration-none" id="forgot-password">Forgot password?</a>
+                        </div>
+                        
+                        <div class="d-grid mb-3">
+                            <button type="submit" class="btn btn-auth text-white" id="login-btn">
+                                <span id="login-text">LOGIN</span>
+                                <span id="login-spinner" class="spinner-border spinner-border-sm" style="display: none;"></span>
+                            </button>
+                        </div>
+                        
+                        <div class="text-center mb-3">
+                            <span class="text-muted">Don't have an account?</span>
+                            <span class="auth-toggle ms-1" onclick="showRegister()">Register</span>
+                        </div>
+                        
+                        <div class="divider"></div>
+                        
+                       
+                    </form>
+                </div>
+                
+                <!-- Register Form (Hidden by default) -->
+                <div id="register-form" class="auth-card p-4" style="display: none;">
+                    <h2 class="auth-title text-center mb-4">Create Account</h2>
+                    
+                    <form id="registerForm">
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <label for="register-firstname" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="register-firstname" placeholder="Enter your first name" required>
+                                <div id="firstNameError" class="error-message"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="register-lastname" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="register-lastname" placeholder="Enter your last name" required>
+                                <div id="lastNameError" class="error-message"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="register-email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="register-email" placeholder="Enter your email" required>
+                            <div id="registerEmailError" class="error-message"></div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="register-password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="register-password" placeholder="Create a password (min 6 chars)" minlength="6" required>
+                                <button class="btn btn-outline-secondary" type="button" id="register-password-toggle">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="password-strength">
+                                <div class="password-strength-bar" id="password-strength-bar"></div>
+                                <div class="password-strength-text" id="password-strength-text"></div>
+                            </div>
+                            <div id="registerPasswordError" class="error-message"></div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="register-confirm-password" class="form-label">Confirm Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="register-confirm-password" placeholder="Confirm your password" required>
+                                <button class="btn btn-outline-secondary" type="button" id="confirm-password-toggle">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div id="confirmPasswordError" class="error-message"></div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="terms-agree" required>
+                            <label class="form-check-label" for="terms-agree">I agree to the <a href="#" class="text-decoration-none">Terms & Conditions</a></label>
+                            <div id="termsError" class="error-message"></div>
+                        </div>
+                        
+                        <div class="d-grid mb-3">
+                            <button type="submit" class="btn btn-auth text-white" id="register-btn">
+                                <span id="register-text">REGISTER</span>
+                                <span id="register-spinner" class="spinner-border spinner-border-sm" style="display: none;"></span>
+                            </button>
+                        </div>
+                        
+                        <div class="text-center">
+                            <span class="text-muted">Already have an account?</span>
+                            <span class="auth-toggle ms-1" onclick="showLogin()">Login</span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+    apiKey: "AIzaSyBVHBpfk06Obx-VFVdDySzRA02cUzjJR9E",
+    authDomain: "kucchbhi-cfcdb.firebaseapp.com",
+    projectId: "kucchbhi-cfcdb",
+    storageBucket: "kucchbhi-cfcdb.firebasestorage.app",
+    messagingSenderId: "210626996951",
+    appId: "1:210626996951:web:6f59045849c9c88b7a5e92"
+  };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // DOM elements
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const googleLoginBtn = document.getElementById('google-login');
+        const forgotPasswordLink = document.getElementById('forgot-password');
+        const authAlert = document.getElementById('auth-alert');
+        const alertMessage = document.getElementById('alert-message');
+
+        // Password strength levels
+        const strengthLevels = {
+            0: {text: "Very Weak", color: "#dc3545", width: "25%"},
+            1: {text: "Weak", color: "#ff9800", width: "50%"},
+            2: {text: "Medium", color: "#ffc107", width: "75%"},
+            3: {text: "Strong", color: "#28a745", width: "100%"}
+        };
+
+        // Show alert function
+        function showAlert(message, type = 'danger') {
+            alertMessage.textContent = message;
+            authAlert.classList.remove('alert-danger', 'alert-success');
+            authAlert.classList.add(`alert-${type}`, 'show');
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                const alert = bootstrap.Alert.getOrCreateInstance(authAlert);
+                alert.close();
+            }, 5000);
+        }
+
+        // Toggle between login and register forms
+        function showRegister() {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('register-form').style.display = 'block';
+            resetRegisterForm();
+        }
+        
+        function showLogin() {
+            document.getElementById('register-form').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
+            resetLoginForm();
+        }
+
+        // Reset forms
+        function resetLoginForm() {
+            loginForm.reset();
+            hideErrorMessages('loginForm');
+        }
+
+        function resetRegisterForm() {
+            registerForm.reset();
+            hideErrorMessages('registerForm');
+            document.getElementById('password-strength-bar').style.width = '0%';
+            document.getElementById('password-strength-bar').style.backgroundColor = '';
+            document.getElementById('password-strength-text').textContent = '';
+        }
+
+        // Hide all error messages
+        function hideErrorMessages(formId) {
+            const form = document.getElementById(formId);
+            const errorMessages = form.querySelectorAll('.error-message');
+            errorMessages.forEach(error => {
+                error.style.display = 'none';
+            });
+            
+            const inputs = form.querySelectorAll('.form-control');
+            inputs.forEach(input => {
+                input.classList.remove('error');
+            });
+        }
+
+        // Show error message for a specific field
+        function showError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const errorElement = document.getElementById(`${fieldId}Error`);
+            
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+                field.classList.add('error');
+            }
+        }
+
+        // Toggle password visibility
+        function setupPasswordToggle(passwordInputId, toggleButtonId) {
+            const passwordInput = document.getElementById(passwordInputId);
+            const toggleButton = document.getElementById(toggleButtonId);
+            
+            toggleButton.addEventListener('click', () => {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                
+                const icon = toggleButton.querySelector('i');
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
+            });
+        }
+
+        // Password strength calculation
+        document.getElementById('register-password').addEventListener('input', function() {
+            const password = this.value;
+            let strength = 0;
+            
+            // Check password length
+            if (password.length >= 8) strength++;
+            
+            // Check for uppercase letters
+            if (/[A-Z]/.test(password)) strength++;
+            
+            // Check for numbers
+            if (/\d/.test(password)) strength++;
+            
+            // Check for special characters
+            if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
+            
+            // Limit strength to 3
+            strength = Math.min(strength, 3);
+            
+            // Update strength indicator
+            const level = strengthLevels[strength];
+            const strengthBar = document.getElementById('password-strength-bar');
+            const strengthText = document.getElementById('password-strength-text');
+            
+            strengthBar.style.width = level.width;
+            strengthBar.style.backgroundColor = level.color;
+            strengthText.textContent = level.text;
+            strengthText.className = "password-strength-text";
+            
+            if (strength <= 1) {
+                strengthText.classList.add("strength-weak");
+            } else if (strength === 2) {
+                strengthText.classList.add("strength-medium");
+            } else {
+                strengthText.classList.add("strength-strong");
+            }
+        });
+
+        // Validate register form
+        function validateRegisterForm() {
+            let isValid = true;
+            hideErrorMessages('registerForm');
+            
+            // First name validation
+            const firstName = document.getElementById('register-firstname').value.trim();
+            if (!firstName) {
+                showError('register-firstname', 'First name is required');
+                isValid = false;
+            }
+            
+            // Last name validation
+            const lastName = document.getElementById('register-lastname').value.trim();
+            if (!lastName) {
+                showError('register-lastname', 'Last name is required');
+                isValid = false;
+            }
+            
+            // Email validation
+            const email = document.getElementById('register-email').value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showError('register-email', 'Please enter a valid email address');
+                isValid = false;
+            }
+            
+            // Password validation
+            const password = document.getElementById('register-password').value;
+            if (password.length < 6) {
+                showError('register-password', 'Password must be at least 6 characters');
+                isValid = false;
+            }
+            
+            // Confirm password validation
+            const confirmPassword = document.getElementById('register-confirm-password').value;
+            if (password !== confirmPassword) {
+                showError('register-confirm-password', 'Passwords do not match');
+                isValid = false;
+            }
+            
+            // Terms agreement validation
+            if (!document.getElementById('terms-agree').checked) {
+                showError('terms-agree', 'You must agree to the terms and conditions');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+
+        // Validate login form
+        function validateLoginForm() {
+            let isValid = true;
+            hideErrorMessages('loginForm');
+            
+            // Email validation
+            const email = document.getElementById('login-email').value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showError('login-email', 'Please enter a valid email address');
+                isValid = false;
+            }
+            
+            // Password validation
+            const password = document.getElementById('login-password').value;
+            if (password.length < 6) {
+                showError('login-password', 'Password must be at least 6 characters');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+
+        // Set up password toggles
+        setupPasswordToggle('login-password', 'login-password-toggle');
+        setupPasswordToggle('register-password', 'register-password-toggle');
+        setupPasswordToggle('register-confirm-password', 'confirm-password-toggle');
+
+        // Email/password registration
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!validateRegisterForm()) return;
+            
+            const firstName = document.getElementById('register-firstname').value.trim();
+            const lastName = document.getElementById('register-lastname').value.trim();
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            
+            // Disable button to prevent multiple clicks
+            const registerBtn = document.getElementById('register-btn');
+            const registerText = document.getElementById('register-text');
+            const registerSpinner = document.getElementById('register-spinner');
+            
+            registerBtn.disabled = true;
+            registerText.textContent = 'Registering...';
+            registerSpinner.style.display = 'inline-block';
+            
+            try {
+                // Create user with email and password
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                // Save additional user data to Firestore
+                await db.collection('users').doc(user.uid).set({
+                    firstName: firstName,
+                    lastName: lastName,
+                    email: email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Send email verification
+                await user.sendEmailVerification();
+                
+                showAlert('Registration successful! Please check your email for verification.', 'success');
+                registerForm.reset();
+                showLogin();
+            } catch (error) {
+                console.error('Registration error:', error);
+                showAlert(getFirebaseErrorMessage(error.code));
+            } finally {
+                registerBtn.disabled = false;
+                registerText.textContent = 'REGISTER';
+                registerSpinner.style.display = 'none';
+            }
+        });
+
+        // Email/password login
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!validateLoginForm()) return;
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const rememberMe = document.getElementById('remember-me').checked;
+            
+            // Set persistence based on "Remember me" selection
+            const persistence = rememberMe ? 
+                firebase.auth.Auth.Persistence.LOCAL : 
+                firebase.auth.Auth.Persistence.SESSION;
+            
+            // Disable button to prevent multiple clicks
+            const loginBtn = document.getElementById('login-btn');
+            const loginText = document.getElementById('login-text');
+            const loginSpinner = document.getElementById('login-spinner');
+            
+            loginBtn.disabled = true;
+            loginText.textContent = 'Logging in...';
+            loginSpinner.style.display = 'inline-block';
+            
+            try {
+                await auth.setPersistence(persistence);
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                if (!user.emailVerified) {
+                    await auth.signOut();
+                    showAlert('Please verify your email before logging in. Check your inbox for the verification email.');
+                    return;
+                }
+                
+                // Update last login timestamp
+                await db.collection('users').doc(user.uid).update({
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Redirect to dashboard or home page
+                showAlert('Login successful! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = 'index2.html'; // Change to your desired redirect page
+                }, 1500);
+            } catch (error) {
+                console.error('Login error:', error);
+                showAlert(getFirebaseErrorMessage(error.code));
+            } finally {
+                loginBtn.disabled = false;
+                loginText.textContent = 'LOGIN';
+                loginSpinner.style.display = 'none';
+            }
+        });
+
+        // Google authentication
+        googleLoginBtn.addEventListener('click', async () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            
+            // Disable button to prevent multiple clicks
+            googleLoginBtn.disabled = true;
+            const googleIcon = googleLoginBtn.querySelector('i');
+            const originalHtml = googleLoginBtn.innerHTML;
+            googleLoginBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Signing in...';
+            
+            try {
+                const result = await auth.signInWithPopup(provider);
+                const user = result.user;
+                
+                // Check if user exists in Firestore
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                
+                if (!userDoc.exists) {
+                    // Save new user data
+                    await db.collection('users').doc(user.uid).set({
+                        firstName: user.displayName?.split(' ')[0] || '',
+                        lastName: user.displayName?.split(' ')[1] || '',
+                        email: user.email,
+                        photoURL: user.photoURL,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                        provider: 'google'
+                    });
+                } else {
+                    // Update last login time
+                    await db.collection('users').doc(user.uid).update({
+                        lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                
+                // Redirect to dashboard or home page
+                showAlert('Login successful! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = 'index2.html'; // Change to your desired redirect page
+                }, 1500);
+            } catch (error) {
+                console.error('Google sign-in error:', error);
+                showAlert(getFirebaseErrorMessage(error.code));
+            } finally {
+                googleLoginBtn.disabled = false;
+                googleLoginBtn.innerHTML = originalHtml;
+            }
+        });
+
+        // Password reset
+        forgotPasswordLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            
+            if (!email) {
+                showAlert('Please enter your email address first');
+                return;
+            }
+            
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showAlert('Password reset email sent. Please check your inbox.', 'success');
+            } catch (error) {
+                console.error('Password reset error:', error);
+                showAlert(getFirebaseErrorMessage(error.code));
+            }
+        });
+
+        // Helper function to translate Firebase error codes
+        function getFirebaseErrorMessage(code) {
+            switch(code) {
+                case 'auth/email-already-in-use':
+                    return 'This email is already registered. Please sign in or use a different email.';
+                case 'auth/invalid-email':
+                    return 'The email address is not valid.';
+                case 'auth/weak-password':
+                    return 'Password should be at least 6 characters.';
+                case 'auth/user-not-found':
+                    return 'No account found with this email address.';
+                case 'auth/wrong-password':
+                    return 'Incorrect password. Please try again.';
+                case 'auth/too-many-requests':
+                    return 'Too many unsuccessful attempts. Please try again later.';
+                case 'auth/popup-closed-by-user':
+                    return 'Google sign-in was canceled.';
+                case 'auth/network-request-failed':
+                    return 'Network error. Please check your internet connection.';
+                default:
+                    return 'An error occurred. Please try again.';
+            }
+        }
+
+        // Check auth state (optional - if you want to redirect already logged in users)
+        auth.onAuthStateChanged((user) => {
+            
+    if (user) {
+        const userName = user.displayName || user.email.split('@')[0];
+        showNotification(`Welcome ${userName}! Redirecting...`, true);
+        
+        setTimeout(() => {
+            window.location.href = 'index2.html';
+        }, 2000);
+    }
+
+        });
+    </script>
+</body>
+</html>
